@@ -887,6 +887,46 @@ fallback_arbitrate_touch(struct fallback_dispatch *dispatch,
 }
 
 static inline bool
+fallback_virtual_keys(struct fallback_dispatch *dispatch,
+			 struct mt_slot *slot,
+			 struct evdev_device *device,
+		     uint64_t time)
+{
+	bool discard = false;
+
+	bool has_virtual_keys = false;
+	if (!evdev_device_has_model_quirk(device,
+					 QUIRK_MODEL_TOUCH_VIRTUAL_KEYS))
+		return false;
+
+	const char *syspath;
+	xasprintf(&syspath, "/sys/board_properties/virtualkeys.%s", device->name);
+
+	FILE *fp = fopen(syspath, "r");
+	if (fp) {
+		has_virtual_keys = true;
+
+	}
+	
+
+	if (has_virtual_keys) {
+		struct device_coord_rect *rect;
+
+		list_for_each(rect, &dispatch->keymap.rect_list) {
+			if (point_in_rect(&slot->point, rect)) {
+				slot->palm_state = PALM_IS_PALM;
+				discard = true;
+				struct input_event *e;
+				e.
+				fallback_process_key(dispatch, device, e, time);
+			}
+		}
+	}
+
+	return discard;
+}
+
+static inline bool
 fallback_flush_mt_events(struct fallback_dispatch *dispatch,
 			 struct evdev_device *device,
 			 uint64_t time)
@@ -915,8 +955,8 @@ fallback_flush_mt_events(struct fallback_dispatch *dispatch,
 		} else if (slot->palm_state == PALM_NONE) {
 			switch (slot->state) {
 			case SLOT_STATE_BEGIN:
-				if (!fallback_arbitrate_touch(dispatch,
-							     slot)) {
+				if (!fallback_arbitrate_touch(dispatch, slot)
+				 && !fallback_virtual_keys(dispatch, slot, device, time)) {
 					sent = fallback_flush_mt_down(dispatch,
 								      device,
 								      i,

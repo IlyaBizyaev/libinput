@@ -141,6 +141,8 @@ ModelTabletNoProximityOut
 ModelTouchpadVisibleMarker
     Indicates the touchpad has a drawn-on visible marker between the software
     buttons.
+ModelTouchVirtualKeys
+    Indicates that the touch device has declared virtual keys.
 ModelTabletModeNoSuspend
     Indicates that the device does not need to be
     suspended in :ref:`switches_tablet_mode`.

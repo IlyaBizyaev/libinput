@@ -113,6 +113,8 @@ enum udev_type {
 	UDEV_TABLET_PAD		= (1 << 5),
 	UDEV_JOYSTICK		= (1 << 6),
 	UDEV_KEYBOARD		= (1 << 7),
+	UDEV_TOUCHSCREEN	= (1 << 8),
+	UDEV_KEYS			= (1 << 9),
 };
 
 /**
@@ -254,6 +256,7 @@ quirk_get_name(enum quirk q)
 	case QUIRK_MODEL_TOUCHPAD_VISIBLE_MARKER:	return "ModelTouchpadVisibleMarker";
 	case QUIRK_MODEL_TRACKBALL:			return "ModelTrackball";
 	case QUIRK_MODEL_WACOM_TOUCHPAD:		return "ModelWacomTouchpad";
+	case QUIRK_MODEL_TOUCH_VIRTUAL_KEYS:		return "ModelTouchVirtualKeys";
 
 	case QUIRK_ATTR_SIZE_HINT:			return "AttrSizeHint";
 	case QUIRK_ATTR_TOUCH_SIZE_RANGE:		return "AttrTouchSizeRange";
@@ -525,19 +528,23 @@ parse_match(struct quirks_context *ctx,
 	} else if (streq(key, "MatchUdevType")) {
 		check_set_bit(s, M_UDEV_TYPE);
 		if (streq(value, "touchpad"))
-			s->match.udev_type = UDEV_TOUCHPAD;
+			s->match.udev_type |= UDEV_TOUCHPAD;
 		else if (streq(value, "mouse"))
-			s->match.udev_type = UDEV_MOUSE;
+			s->match.udev_type |= UDEV_MOUSE;
 		else if (streq(value, "pointingstick"))
-			s->match.udev_type = UDEV_POINTINGSTICK;
+			s->match.udev_type |= UDEV_POINTINGSTICK;
 		else if (streq(value, "keyboard"))
-			s->match.udev_type = UDEV_KEYBOARD;
+			s->match.udev_type |= UDEV_KEYBOARD;
 		else if (streq(value, "joystick"))
-			s->match.udev_type = UDEV_JOYSTICK;
+			s->match.udev_type |= UDEV_JOYSTICK;
 		else if (streq(value, "tablet"))
-			s->match.udev_type = UDEV_TABLET;
+			s->match.udev_type |= UDEV_TABLET;
 		else if (streq(value, "tablet-pad"))
-			s->match.udev_type = UDEV_TABLET_PAD;
+			s->match.udev_type |= UDEV_TABLET_PAD;
+		else if (streq(value, "touchscreen"))
+			s->match.udev_type |= UDEV_TOUCHSCREEN;
+		else if (streq(value, "keys"))
+			s->match.udev_type |= UDEV_KEYS;
 		else
 			goto out;
 	} else if (streq(key, "MatchDeviceTree")) {
@@ -1226,6 +1233,8 @@ match_fill_udev_type(struct match *m,
 		{ "ID_INPUT_TABLET_PAD", UDEV_TABLET_PAD },
 		{ "ID_INPUT_JOYSTICK", UDEV_JOYSTICK },
 		{ "ID_INPUT_KEYBOARD", UDEV_KEYBOARD },
+		{ "ID_INPUT_TOUCHSCREEN", UDEV_TOUCHSCREEN},
+		{ "ID_INPUT_KEY", UDEV_KEYS},
 	};
 	struct ut_map *map;
 
@@ -1353,7 +1362,7 @@ quirk_match_section(struct quirks_context *ctx,
 				matched_flags |= flag;
 			break;
 		case M_UDEV_TYPE:
-			if (s->match.udev_type & m->udev_type)
+			if (s->match.udev_type & m->udev_type == m->udev_type)
 				matched_flags |= flag;
 			break;
 		default:
